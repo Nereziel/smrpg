@@ -14,6 +14,7 @@ bool g_bIsCSGO;
 
 ConVar g_hCVExpKillMax;
 ConVar g_hCVExpTeamwin;
+ConVar g_hCVExpNonObjectiveWin;
 
 ConVar g_hCVExpKillAssist;
 
@@ -28,6 +29,8 @@ ConVar g_hCVExpVIPEscaped;
 ConVar g_hCVExpDominating;
 ConVar g_hCVExpRevenge;
 
+ConVar g_hCVExpDZPlace[3];
+
 ConVar g_hCVBotEarnExpObjective;
 
 ConVar g_hCVShowMVPLevel;
@@ -35,13 +38,13 @@ ConVar g_hCVEnableAntiKnifeleveling;
 
 ConVar g_hCVDisableXPDuringWarmup;
 
-enum KnifeLeveling {
-	KL_Hits,
-	KL_LastAttack,
-	KL_FirstAttack
-};
+enum struct KnifeLeveling {
+	int hits;
+	int lastAttack;
+	int firstAttack;
+}
 
-int g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1][KnifeLeveling];
+KnifeLeveling g_iKnifeDamage[MAXPLAYERS+1][MAXPLAYERS+1];
 bool g_bKnifeLeveled[MAXPLAYERS+1];
 Handle g_hKnifeLevelCooldown[MAXPLAYERS+1];
 int g_iKnifeLevelDetections[MAXPLAYERS+1];
@@ -75,18 +78,23 @@ public void OnPluginStart()
 	AutoExecConfig_SetCreateFile(true);
 	AutoExecConfig_SetPlugin(null);
 	
+	g_hCVExpNonObjectiveWin = AutoExecConfig_CreateConVar("smrpg_exp_non_objective_teamwin", "0", "Should the winning team get smrpg_exp_teamwin experience for other reasons than completing an objective like killing all players of the enemy team or a timeout?", 0, true, 0.0, true, 1.0);
 	g_hCVExpKillAssist = AutoExecConfig_CreateConVar("smrpg_exp_kill_assist", "10.0", "Experience for assisting in killing a player multiplied by the victim's level", 0, true, 0.0);
 	
 	g_hCVExpHeadshot = AutoExecConfig_CreateConVar("smrpg_exp_headshot", "50.0", "Experience extra for a headshot", 0, true, 0.0);
 	
-	g_hCVExpBombPlanted = AutoExecConfig_CreateConVar("smrpg_exp_bombplanted", "0.15", "Experience multipled by the experience required and the team ratio given for planting the bomb", 0, true, 0.0);
-	g_hCVExpBombDefused = AutoExecConfig_CreateConVar("smrpg_exp_bombdefused", "0.30", "Experience multipled by the experience required and the team ratio given for defusing the bomb", 0, true, 0.0);
-	g_hCVExpBombExploded = AutoExecConfig_CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
-	g_hCVExpHostage = AutoExecConfig_CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required and the team ratio for rescuing a hostage", 0, true, 0.0);
-	g_hCVExpVIPEscaped = AutoExecConfig_CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
+	g_hCVExpBombPlanted = AutoExecConfig_CreateConVar("smrpg_exp_bombplanted", "0.15", "Experience multipled by the experience required for the player's next level and the team ratio given for planting the bomb", 0, true, 0.0);
+	g_hCVExpBombDefused = AutoExecConfig_CreateConVar("smrpg_exp_bombdefused", "0.30", "Experience multipled by the experience required for the player's next level and the team ratio given for defusing the bomb", 0, true, 0.0);
+	g_hCVExpBombExploded = AutoExecConfig_CreateConVar("smrpg_exp_bombexploded", "0.20", "Experience multipled by the experience required for the player's next level and the team ratio given to the bomb planter when it explodes", 0, true, 0.0);
+	g_hCVExpHostage = AutoExecConfig_CreateConVar("smrpg_exp_hostage", "0.10", "Experience multipled by the experience required for the player's next level and the team ratio for rescuing a hostage", 0, true, 0.0);
+	g_hCVExpVIPEscaped = AutoExecConfig_CreateConVar("smrpg_exp_vipescaped", "0.35", "Experience multipled by the experience required for the player's next level and the team ratio given to the vip when the vip escapes", 0, true, 0.0);
 	
 	g_hCVExpDominating = AutoExecConfig_CreateConVar("smrpg_exp_dominating", "5.0", "Experience for dominating an enemy multiplied by the victim's level.", 0, true, 0.0);
 	g_hCVExpRevenge = AutoExecConfig_CreateConVar("smrpg_exp_revenge", "8.0", "Experience for killing a dominating enemy in revenge multiplied by the attackers's level.", 0, true, 0.0);
+
+	g_hCVExpDZPlace[0] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_1", "10000", "Experience for first place in a Danger Zone match.", 0, true, 0.0);
+	g_hCVExpDZPlace[1] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_2", "7500", "Experience for second place in a Danger Zone match.", 0, true, 0.0);
+	g_hCVExpDZPlace[2] = AutoExecConfig_CreateConVar("smrpg_exp_dz_place_3", "5000", "Experience for third place in a Danger Zone match.", 0, true, 0.0);
 	
 	g_hCVBotEarnExpObjective = AutoExecConfig_CreateConVar("smrpg_bot_exp_objectives", "1", "Should bots earn experience for completing objectives (bomb, hostage, ..)?", 0, true, 0.0, true, 1.0);
 	
@@ -111,6 +119,11 @@ public void OnPluginStart()
 	
 	HookEvent("player_spawn", Event_OnPlayerSpawn);
 	HookEvent("round_mvp", Event_OnRoundMVP);
+
+	UserMsg msgSurvivalStats = GetUserMessageId("SurvivalStats");
+	// SurvivalStats only available in CS:GO and "Protobuf.ReadInt64" was added in SourceMod 1.10.
+	if(msgSurvivalStats != INVALID_MESSAGE_ID && GetFeatureStatus(FeatureType_Native, "Protobuf.ReadInt64") == FeatureStatus_Available)
+		HookUserMessage(msgSurvivalStats, UsrMsgHook_OnSurvivalStats);
 }
 
 public void OnAllPluginsLoaded()
@@ -128,13 +141,13 @@ public void OnClientDisconnect(int client)
 	
 	for(int i=1;i<=MaxClients;i++)
 	{
-		g_iKnifeDamage[client][i][KL_Hits] = 0;
-		g_iKnifeDamage[client][i][KL_LastAttack] = 0;
-		g_iKnifeDamage[client][i][KL_FirstAttack] = 0;
+		g_iKnifeDamage[client][i].hits = 0;
+		g_iKnifeDamage[client][i].lastAttack = 0;
+		g_iKnifeDamage[client][i].firstAttack = 0;
 		
-		g_iKnifeDamage[i][client][KL_Hits] = 0;
-		g_iKnifeDamage[i][client][KL_LastAttack] = 0;
-		g_iKnifeDamage[i][client][KL_FirstAttack] = 0;
+		g_iKnifeDamage[i][client].hits = 0;
+		g_iKnifeDamage[i][client].lastAttack = 0;
+		g_iKnifeDamage[i][client].firstAttack = 0;
 	}
 }
 
@@ -212,23 +225,23 @@ public void Event_OnPlayerHurt(Event event, const char[] error, bool dontBroadca
 	if(StrContains(sWeapon, "knife") != -1)
 	{
 		// If this guy didn't attack the other player for 30 seconds, reset his hit count.
-		if((GetTime() - g_iKnifeDamage[attacker][victim][KL_LastAttack]) > 30)
+		if((GetTime() - g_iKnifeDamage[attacker][victim].lastAttack) > 30)
 		{
 			//PrintToServer("%N didn't knife %N for at least 30 seconds. Resetting hit count.", attacker, victim);
-			g_iKnifeDamage[attacker][victim][KL_Hits] = 0;
+			g_iKnifeDamage[attacker][victim].hits = 0;
 		}
 		
 		// Remember this great moment of first strike!
-		if(g_iKnifeDamage[attacker][victim][KL_Hits] == 0)
-			g_iKnifeDamage[attacker][victim][KL_FirstAttack] = GetTime();
+		if(g_iKnifeDamage[attacker][victim].hits == 0)
+			g_iKnifeDamage[attacker][victim].firstAttack = GetTime();
 		
-		g_iKnifeDamage[attacker][victim][KL_Hits]++;
-		g_iKnifeDamage[attacker][victim][KL_LastAttack] = GetTime();
+		g_iKnifeDamage[attacker][victim].hits++;
+		g_iKnifeDamage[attacker][victim].lastAttack = GetTime();
 		
 		// Player attacked victim at least 5 times at least 10 seconds after the first attack
-		if(g_iKnifeDamage[attacker][victim][KL_Hits] > 5 && (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]) > 10)
+		if(g_iKnifeDamage[attacker][victim].hits > 5 && (g_iKnifeDamage[attacker][victim].lastAttack - g_iKnifeDamage[attacker][victim].firstAttack) > 10)
 		{
-			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim][KL_Hits], (g_iKnifeDamage[attacker][victim][KL_LastAttack] - g_iKnifeDamage[attacker][victim][KL_FirstAttack]));
+			//PrintToServer("%N is knifeleveling on %N. hits %d, time since first attack: %d", attacker, victim, g_iKnifeDamage[attacker][victim].hits, (g_iKnifeDamage[attacker][victim].lastAttack - g_iKnifeDamage[attacker][victim].firstAttack));
 			if(g_hCVEnableAntiKnifeleveling.BoolValue && !g_bKnifeLeveled[attacker])
 			{
 				LogMessage("%L (lvl %d) is knifeleveling with %L (lvl %d).", attacker, SMRPG_GetClientLevel(attacker), victim, SMRPG_GetClientLevel(victim));
@@ -332,6 +345,8 @@ public void Event_OnPlayerDeath(Event event, const char[] error, bool dontBroadc
 	1   The VIP has escaped!
 	2   VIP has been assassinated!
 	6   The bomb has been defused!
+	7   Counter-Terrorists win! (smrpg_exp_non_objective_teamwin)
+	8   Terrorists win! (smrpg_exp_non_objective_teamwin)
 	10   All Hostages have been rescued!
 	11   Target has been saved!
 	12   Hostages have not been rescued!
@@ -352,6 +367,12 @@ public void Event_OnRoundEnd(Event event, const char[] error, bool dontBroadcast
 	{
 		case CSRoundEnd_TargetBombed, CSRoundEnd_VIPEscaped, CSRoundEnd_VIPKilled, CSRoundEnd_BombDefused, CSRoundEnd_HostagesRescued, CSRoundEnd_TargetSaved, CSRoundEnd_HostagesNotRescued:
 		{
+		}
+		case CSRoundEnd_CTWin, CSRoundEnd_TerroristWin:
+		{
+			// Only give experience for winning through other means than an objective if the admin wants this.
+			if (!g_hCVExpNonObjectiveWin.BoolValue)
+				return;
 		}
 		default:
 			return;
@@ -472,6 +493,54 @@ public void Event_OnVIPEscaped(Event event, const char[] error, bool dontBroadca
 	Debug_AddClientExperience(client, RoundToCeil(float(SMRPG_LevelToExperience(SMRPG_GetClientLevel(client))) * g_hCVExpVIPEscaped.FloatValue * fTeamRatio), false, "cs_vipescaped");
 }
 
+// CS:GO Danger Zone winners.
+public Action UsrMsgHook_OnSurvivalStats(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
+{
+	if(!SMRPG_IsEnabled())
+		return;
+
+	int xuid[2];
+	int userCount = msg.GetRepeatedFieldCount("users");
+	for(int i = 0; i < userCount; i++)
+	{
+		Protobuf placement = msg.ReadRepeatedMessage("users", i);
+		placement.ReadInt64("xuid", xuid);
+		int client = GetClientByAccountID(xuid[0]);
+		if(client == -1)
+			continue;
+
+		int place = placement.ReadInt("placement");
+		if(place > 3)
+			continue;
+
+		// TODO: Dynamically scale based on RPG level of competitors?
+		// Consider other players in their squad?
+		DataPack hPack = new DataPack();
+		hPack.WriteCell(GetClientUserId(client));
+		hPack.WriteCell(place);
+		hPack.Reset();
+
+		// Give experience on the next frame to avoid problems with
+		// sending new usermessages during a usermessage hook.
+		RequestFrame(AddDangerZoneExperienceNextFrame, hPack);
+	}
+}
+
+void AddDangerZoneExperienceNextFrame(DataPack hPack)
+{
+	hPack.Reset();
+	int client = GetClientOfUserId(hPack.ReadCell());
+	int place = hPack.ReadCell();
+	delete hPack;
+
+	if(!client)
+		return;
+
+	char sExperienceReason[32];
+	Format(sExperienceReason, sizeof(sExperienceReason), "cs_dangerzone_place%d", place);
+	Debug_AddClientExperience(client, g_hCVExpDZPlace[place - 1].IntValue, false, sExperienceReason);
+}
+
 public Action Timer_ResetKnifeLeveling(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
@@ -493,6 +562,23 @@ void UpdateMVPLevel(int client)
 		return;
 	
 	CS_SetMVPCount(client, SMRPG_GetClientLevel(client));
+}
+
+stock int GetClientByAccountID(int iTargetAccountID)
+{
+	for(int i=1;i<=MaxClients;i++)
+	{
+		if (!IsClientConnected(i))
+			continue;
+
+		int iAccountID = GetSteamAccountID(i);
+		if(!iAccountID)
+			continue;
+
+		if(iTargetAccountID == iAccountID)
+			return i;
+	}
+	return -1;
 }
 
 // This stuff is leftover from balancing the experience on a deathmatch server.
@@ -555,7 +641,7 @@ stock void DebugLog(const char[] format, any ...)
 		hFile = OpenFile(sPath, "a");
 		iOpenTime = GetTime();
 	}
-	
+
 	// Flush the buffer.
 	if((strlen(sLog) + strlen(sBuffer) + 24) >= sizeof(sLog)-1)
 	{
@@ -563,7 +649,7 @@ stock void DebugLog(const char[] format, any ...)
 			hFile.WriteString(sLog, false);
 		sLog[0] = 0;
 	}
-	
+
 	char sDate[32];
 	FormatTime(sDate, sizeof(sDate), "%m/%d/%Y - %H:%M:%S: ");
 	StrCat(sLog, sizeof(sLog), sDate);

@@ -18,14 +18,14 @@ if [ ! -d "build" ]; then
 	cp -R ../scripting/ addons/sourcemod/
 
 	# get dependency libraries.
-	git clone https://github.com/bcserv/smlib.git
+	git clone -b transitional_syntax --single-branch https://github.com/bcserv/smlib.git
 	cp -R smlib/scripting/include/ addons/sourcemod/scripting/
 
 	git clone https://github.com/Impact123/AutoExecConfig.git
 	cp AutoExecConfig/autoexecconfig.inc addons/sourcemod/scripting/include/
 
-	hg clone https://bitbucket.org/Drifter321/dhooks2
-	cp dhooks2/sourcemod/scripting/include/dhooks.inc addons/sourcemod/scripting/include/
+	git clone https://github.com/Drifter321/DHooks2.git
+	cp DHooks2/sourcemod/scripting/include/dhooks.inc addons/sourcemod/scripting/include/
 
 	git clone https://github.com/Drixevel/Chat-Processor.git
 	cp Chat-Processor/scripting/include/chat-processor.inc addons/sourcemod/scripting/include/
@@ -35,6 +35,9 @@ if [ ! -d "build" ]; then
 	
 	git clone https://github.com/KissLick/ColorVariables.git
 	cp ColorVariables/addons/sourcemod/scripting/includes/colorvariables.inc addons/sourcemod/scripting/include/
+
+	git clone https://github.com/peace-maker/mapzonelib.git
+	cp mapzonelib/scripting/include/mapzonelib.inc addons/sourcemod/scripting/include/
 	
 	cd ..
 fi

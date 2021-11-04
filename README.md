@@ -1,7 +1,7 @@
 SM:RPG
 =====
 
-A modular generic RPG plugin for SourceMod 1.7+.
+A modular generic RPG plugin for SourceMod 1.10+.
 
 [![Build Status](https://travis-ci.org/peace-maker/smrpg.svg?branch=master)](https://travis-ci.org/peace-maker/smrpg)
 
@@ -21,7 +21,7 @@ When an upgrade registers itself at the core, it'll automatically be added to th
 Server admins can install a new upgrade simply by loading the upgrade plugin.
 
 # Installation
-* Download the [latest pre-compiled build](http://build.wcfan.de/smrpg/1.9/).
+* Download the [latest pre-compiled build](http://build.wcfan.de/smrpg/1.10/).
 * Upload the plugins as well as the configs, gamedata and translations folders to your gameserver.
   * Only upload the plugins/upgrades you want to use. See below for an explanation of each plugin's purpose.
 * (Optional) Install [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for the Speed+ upgrade.
@@ -39,10 +39,11 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
 * Next to the above generated config files there are additional config files in [mod]/addons/sourcemod/configs/smrpg.
 
 # Compile requirements
-* [smlib git master](https://github.com/bcserv/smlib)
+* [smlib git transitional_syntax branch](https://github.com/bcserv/smlib/tree/transitional_syntax)
 * [AutoExecConfig](https://github.com/Impact123/AutoExecConfig)
 * (optional) [DHooks](https://forums.alliedmods.net/showthread.php?t=180114) for Speed+ upgrade
 * (optional) [Chat Processor](https://forums.alliedmods.net/showthread.php?t=286913) *OR* [Simple Chat Processor](https://forums.alliedmods.net/showthread.php?t=198501) and [ColorVariables](https://forums.alliedmods.net/showthread.php?t=267743) for the Chat Tags module
+* (optional) [mapzonelib](https://github.com/peace-maker/mapzonelib) for No Experience Zones
 
 # Compile instructions
 * Compile the core smrpg plugin (see Compile requirements)
@@ -58,6 +59,7 @@ Server admins can install a new upgrade simply by loading the upgrade plugin.
   * smrpg_effects - Central library to apply similar upgrade effects. Required by some upgrades!
   * smrpg_gifting - Allow players to give other players rpg credits as a gift.
   * smrpg_keyhint_info - Display rpg stats and more info permanently on the screen.
+  * smrpg_noxpzones - Disable earning of experience while a player or the target is in a defined zone on the map.
   * smrpg_resetstats - Automatically reset the stats on different conditions and display next reset date in chat.
   * smrpg_turbomode - Increase the experience and credits rate for one map, but don't save the stats. For fun events.
 * Compile all the upgrades you want to use
@@ -93,7 +95,9 @@ See the available upgrade plugins for examples. You can use the [example upgrade
 * Increase Firerate - Increases the firerate of weapons.
 * Long Jump - Boosts your jump speed.
 * Medic - Heals team mates around you.
+* Mirror Damage - Mirror some of your received damage back to the attacker.
 * Poison Smoke (Counter-Strike: Source only) - Damages players inside the smoke of a smoke grenade.
+* Position Swap - Gives you the chance to swap positions with your attacker.
 * Reduced Fall Damage - Reduces the damage you take from falling from great heights.
 * Reduced Gravity - Reduces your gravity and lets you jump higher.
 * Resupply - Regenerates ammo every third second.

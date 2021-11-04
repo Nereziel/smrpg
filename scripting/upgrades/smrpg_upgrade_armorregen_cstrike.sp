@@ -112,9 +112,7 @@ public Action Timer_IncreaseArmor(Handle timer, any userid)
 	if(!SMRPG_IsEnabled())
 		return Plugin_Continue;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return Plugin_Continue;
 	
 	// Are bots allowed to use this upgrade?
@@ -122,7 +120,7 @@ public Action Timer_IncreaseArmor(Handle timer, any userid)
 		return Plugin_Continue;
 	
 	// Only change alive players.
-	if(!IsPlayerAlive(client) || IsClientObserver(client))
+	if(!IsClientInGame(client) || !IsPlayerAlive(client) || IsClientObserver(client))
 		return Plugin_Continue;
 	
 	// Player didn't buy this upgrade yet.

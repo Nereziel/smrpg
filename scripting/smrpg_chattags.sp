@@ -2,6 +2,8 @@
 #include <sourcemod>
 #include <smrpg>
 
+//#define USE_SIMPLE_PROCESSOR 1
+
 // Prefer chat processor if available..
 #if defined USE_SIMPLE_PROCESSOR
 // https://forums.alliedmods.net/showthread.php?t=198501
@@ -42,7 +44,7 @@ public void OnPluginStart()
 #if defined USE_SIMPLE_PROCESSOR
 public Action OnChatMessage(int& author, Handle recipients, char[] name, char[] message)
 #else
-public Action OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
+public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 #endif
 {
 	// Show the rank of the Top X players in front of their name.

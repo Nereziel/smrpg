@@ -84,11 +84,8 @@ public void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadca
 	if(!client)
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	
 	/* Reset player Denial data while Denial is disabled */
-	if(!SMRPG_IsEnabled() || !upgrade[UI_enabled])
+	if(!SMRPG_IsEnabled() || !SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 	{
 		Denial_ResetClient(client);
 		return;
@@ -114,11 +111,8 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
 	if(!client)
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	
 	/* Reset player Denial data while Denial is disabled */
-	if(!SMRPG_IsEnabled() || !upgrade[UI_enabled])
+	if(!SMRPG_IsEnabled() || !SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 	{
 		Denial_ResetClient(client);
 		return;
@@ -164,11 +158,8 @@ public void SMRPG_TranslateUpgrade(int client, const char[] shortname, Translati
  */
 public Action Hook_WeaponEquipPost(int client, int weapon)
 {
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	
 	/* Reset player Denial data while Denial is disabled */
-	if(!SMRPG_IsEnabled() || !upgrade[UI_enabled])
+	if(!SMRPG_IsEnabled() || !SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 	{
 		Denial_ResetClient(client);
 		return Plugin_Continue;
@@ -301,6 +292,8 @@ bool GetRealWeaponClassname(int entity, char[] sClassname, int maxlen)
 		char sWeapon[32];
 		switch(iItemDefinitionIndex)
 		{
+			case 23:
+				sWeapon = "weapon_mp5sd";
 			case 60:
 				sWeapon = "weapon_m4a1_silencer";
 			case 61:

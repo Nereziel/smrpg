@@ -309,4 +309,24 @@
 	{
 		"en"			"Increase your speed shortly when firing a weapon."
 	}
+	
+	"mirrordmg"
+	{
+		"en"			"Mirror Damage"
+	}
+	
+	"mirrordmg description"
+	{
+		"en"			"Mirror some of your received damage back to the attacker."
+	}
+	
+	"positionswap"
+	{
+		"en"			"Position Swap"
+	}
+	
+	"positionswap description"
+	{
+		"en"			"Gives you the chance to swap positions with your attacker."
+	}
 }

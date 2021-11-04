@@ -309,4 +309,24 @@
 	{
 		"de"			"Erhöht kurzeitig deine Geschwindigkeit, wenn du schiesst."
 	}
+	
+	"mirrordmg"
+	{
+		"de"			"Schadenspiegel"
+	}
+	
+	"mirrordmg description"
+	{
+		"de"			"Erlaubt dir einen Teil des erlittenen Schadens auf deinen Gegner zurückzuwerfen."
+	}
+	
+	"positionswap"
+	{
+		"de"			"Positionstausch"
+	}
+	
+	"positionswap description"
+	{
+		"de"			"Gibt dir die Chance deine Position mit deinem Angreifer zu tauschen."
+	}
 }

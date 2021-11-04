@@ -100,15 +100,13 @@ public void SMRPG_TranslateUpgrade(int client, const char[] shortname, Translati
  */
 public void Hook_OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damagetype, int weapon, const float damageForce[3], const float damagePosition[3])
 {
-	if(attacker <= 0 || attacker > MaxClients || victim <= 0 || victim > MaxClients)
+	if(attacker <= 0 || attacker > MaxClients || !IsClientInGame(attacker) || victim <= 0 || victim > MaxClients)
 		return;
 	
 	if(!SMRPG_IsEnabled())
 		return;
 	
-	int upgrade[UpgradeInfo];
-	SMRPG_GetUpgradeInfo(UPGRADE_SHORTNAME, upgrade);
-	if(!upgrade[UI_enabled])
+	if(!SMRPG_IsUpgradeEnabled(UPGRADE_SHORTNAME))
 		return;
 	
 	// Are bots allowed to use this upgrade?
